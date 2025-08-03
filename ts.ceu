@@ -13,6 +13,31 @@ func random-signal () {
     if random.bool() => 1 => -1
 }
 
+task Move-T (rect:Rect, vel:XY) {
+    ;;;
+    ;; Updates the given `rect` position according to its `vel` speed.
+    ;;  - Updates on every :Frame.
+    ;;  - Terminates when leaving the screen.
+    ;;;
+    watching |out-of-screen() {
+        every :Pico.Frame {
+            val dt = it.ms / 1000
+            set rect.pos.x = rect.pos.x + (vel.x * dt)
+            set rect.pos.y = rect.pos.y + (vel.y * dt)
+        }
+    } where {
+        val out-of-screen = func () {
+            ifs {
+                rect.pos.x < 0     => true
+                rect.pos.x > WIN.w => true
+                rect.pos.y < 0     => true
+                rect.pos.y > WIN.h => true
+                else               => false
+            }
+        }
+    }
+}
+
 task Meteor () :T {
     val path = "imgs/meteor.gif"
     val y-sig = random-signal()
