@@ -120,9 +120,9 @@ loop {
             toggle battle(false)
             spawn {
                 val sfc = IMG.load("imgs/pause.png") --> assert
-                val r = totable('w', 'h', sfc::getSize())
                 val tex = REN::createTextureFromSurface(sfc) --> assert
                 val pt = PP(50, 50)
+                val r = totable('w', 'h', sfc::getSize())
                 set r.x = (pt.x - (r.w/2)) --> math.floor
                 set r.y = (pt.y - (r.h/2)) --> math.floor
                 every :sdl.draw {
