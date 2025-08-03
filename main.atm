@@ -37,7 +37,7 @@ math.randomseed()
 
 ;; START HERE
 
-;;val Battle = require "battle" ;; actual battle gameplay
+val Battle = require "battle" ;; actual battle gameplay
 
 spawn {    ;; BACKGROUND
     ;;;
@@ -104,11 +104,7 @@ loop {
     sdl.play "snds/start.wav"
 
     ;; spawns the actual battle
-    ;;pin battle = spawn Battle()
-    pin battle = spawn {
-        await @5
-        'L'
-    }
+    pin battle = spawn Battle()
 
     ;; Pause with 'P':
     ;;  * awaits 'P' to toggle battle off
