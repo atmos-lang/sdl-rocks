@@ -1,10 +1,10 @@
-;;require "ts" ;; task prototypes for Ship, Shot, Meteor
+require "ts" ;; task prototypes for Ship, Shot, Meteor
 
 ;; Left/Right ship constant parameters
 
 val V = @{
     l = @{                          ;; left ship
-        tag = 'L',
+        tag = :L,
         pos = PP(10, 50),           ;; x,y initial position
         ctl = @{                    ;; key controls
             move  = @{ l='A', r='D', u='W', d='S'},
@@ -12,11 +12,11 @@ val V = @{
             shot  = 'Left Shift',
         },
         lim = @{ x1=0, x2=W/2 },    ;; x limits (half of screen)
-        shot = @{ tag='l', x=1 },   ;; shot tag, x direction
+        shot = @{ tag=:l, x=1 },   ;; shot tag, x direction
         img = "imgs/ship-L.gif",    ;; ship image
     },
     r = @{
-        tag = 'R',
+        tag = :R,
         pos = PP(90, 50),
         ctl = @{
             move = @{ l='Left', r='Right', u='Up', d='Down' },
@@ -24,7 +24,7 @@ val V = @{
             shot = 'Right Shift',
         },
         lim = @{ x1=W/2, x2=W },
-        shot = @{ tag='r', x= -1 },
+        shot = @{ tag=:r, x= -1 },
         img = "imgs/ship-R.gif",    ;; ship image
     },
 }
@@ -105,15 +105,15 @@ func Battle () {
                 loop _,t1 in ts {
                     loop _,t2 in ts {
                         val no = (
-                            ((t1.tag=='R') && (t2.tag=='r')) ||
-                            ((t1.tag=='r') && (t2.tag=='R')) ||
-                            ((t1.tag=='L') && (t2.tag=='l')) ||
-                            ((t1.tag=='l') && (t2.tag=='L')) ||
-                            ((t1.tag=='M') && (t2.tag=='M'))
+                            ((t1.tag==:R) && (t2.tag==:r)) ||
+                            ((t1.tag==:r) && (t2.tag==:R)) ||
+                            ((t1.tag==:L) && (t2.tag==:l)) ||
+                            ((t1.tag==:l) && (t2.tag==:L)) ||
+                            ((t1.tag==:M) && (t2.tag==:M))
                         )
                         if (!no) && rect_vs_rect(t1.rect, t2.rect) {
-                            emit [t1] 'collided' ;; will terminate t1
-                            emit [t2] 'collided' ;; will terminate t2
+                            emit [t1] :collided ;; will terminate t1
+                            emit [t2] :collided ;; will terminate t2
                         }
                     }
                 }
@@ -129,8 +129,8 @@ func Battle () {
     ;;  - 0, if ship[1] is dead
     ;;;
     match s.tag {       ;; BATTLE RESULT
-        'L' => 'R'
-        'R' => 'L'
+        :L => :R
+        :R => :L
     }
 }
 

@@ -1,171 +1,189 @@
-val SHIP-FRAMES      = 4
-val SHIP-ACC-DIV     = 10
-val SHIP-VEL-MAX :XY = [WIN.w/2.5, WIN.h/2.5]
-val SHOT-DIM         = [WIN.w/50, WIN.h/100]
-val SHOT-COLOR       = [0xFF,0xFF,0x88,0xFF]
-val METEOR-FRAMES    = 6
-val METEOR-AWAIT     = 5000
+val SHIP_FRAMES     = 4
+val SHIP_ACC_DIV    = 10
+val SHIP_VEL_MAX    = @{ x=W/2.5, y=H/2.5 }
+val SHOT_DIM        = @{ x=W/50-->math.floor, h=H/100-->math.floor }
+val SHOT_COLOR      = 0xFFFF88
+val METEOR_FRAMES   = 6
+val METEOR_AWAIT    = 5000
 
-data :LRUD    = [left,right,up,down]
-data :Control = [mov:LRUD, shot]
-
-func random-signal () {
-    if random.bool() => 1 => -1
+func between (min, v, max) {
+    ifs {
+        v < min => min
+        v > max => max
+        else    => v
+    }
 }
 
-task Move-T (rect:Rect, vel:XY) {
+func random_signal () {
+    if (math.random(0,1) == 1) => 1 => -1
+}
+
+;; Simple "physics" to update Meteor/Shot `rect` position based on `vel` speed:
+;;  * updates rect every 'step' frame
+;;  * terminates when rect leaves the screen
+
+func Move_T (rect, vel) {
     ;;;
     ;; Updates the given `rect` position according to its `vel` speed.
     ;;  - Updates on every :Frame.
     ;;  - Terminates when leaving the screen.
     ;;;
-    watching |out-of-screen() {
-        every :Pico.Frame {
-            val dt = it.ms / 1000
-            set rect.pos.x = rect.pos.x + (vel.x * dt)
-            set rect.pos.y = rect.pos.y + (vel.y * dt)
+    watching out_of_screen {
+        every :sdl.step \(_,ms) {
+            val dt = ms / 1000
+            set rect.x = rect.x + (vel.x * dt) --> math.floor
+            set rect.y = rect.y + (vel.y * dt) --> math.floor
         }
     } where {
-        val out-of-screen = func () {
+        out_of_screen = func () {
             ifs {
-                rect.pos.x < 0     => true
-                rect.pos.x > WIN.w => true
-                rect.pos.y < 0     => true
-                rect.pos.y > WIN.h => true
-                else               => false
+                rect.x < 0 => true
+                rect.x > W => true
+                rect.y < 0 => true
+                rect.y > H => true
+                else       => false
             }
         }
     }
 }
 
-task Meteor () :T {
-    val path = "imgs/meteor.gif"
-    val y-sig = random-signal()
+func Meteor () {
+    val sfc = IMG.load("imgs/meteor.gif") --> assert
+    val tex = REN::createTextureFromSurface(sfc) --> assert
+    val ww,h = sfc::getSize()
 
-    val vx = (1 + (random.int(WIN.w/5))) * random-signal()
-    val vy = (1 + (random.int(WIN.h/5))) * y-sig
+    val y_sig = random_signal()
 
-    val dim :WH = pico.get.image.size(path)
-    val w = dim.w / METEOR-FRAMES
+    val vx = (1 + (math.random(0,W/5))) * random_signal()
+    val vy = (1 + (math.random(0,H/5))) * y_sig
+
+    val w = ww / METEOR_FRAMES
     var dx = 0
 
-    set pub = :T.Meteor [[[x,y], [w,dim.h]]] where {
-        val x = random.int(WIN.w)
-        val y = if y-sig==1 => 0 => WIN.h
+    val rect = @{ x=x, y=y, w=w, h=h } where {
+        x = math.random(0,W)
+        y = if y_sig==1 => 0 => H
+    }
+    set pub = @{
+        tag  = :M,
+        rect = rect,
     }
 
-    par-or {
-        val dt = random.int(1, METEOR-AWAIT)
-        await <dt:ms>
-        par-or {
-            await spawn Move-T(pub.rect, [vx,vy])
+    par_or {
+        val dt = random.int(1, METEOR_AWAIT)
+        await @.dt
+        par_or {
+            await Move_T(rect, @{x=vx,y=vy})
         } with {
-            await(:collided)
-            pico.output.sound("snds/meteor.wav")
+            await :collided
+            sdl.play "snds/meteor.wav"
         }
     } with {
-        every :Pico.Draw {
-            pico.set.image.crop([[dx,0],[w,dim.h]])
-            pico.output.draw.image(pub.rect.pos, path)
+        every :sdl.draw {
+            val crop = @{ x=dx, y=0, w=w, h=h }
+            REN::copy(tex, crop, rect)
         }
     } with {
-        val v = ((vx**2) + (vy**2)) ** (1/2)
+        val v = ((vx->math.pow(2)) + (vy->math.pow(2))) --> math.pow(1/2)
         var x = 0
-        every :Pico.Frame {
-            set x = x + ((v * it.ms) / 1000)
-            set dx = (x % dim.w) - (x % pub.rect.dim.w)
+        every :sdl.step \(_,ms) {
+            set x = x + ((v * ms) / 1000)
+            set dx = (x % dim.w) - (x % rect.dim.w)
         }
     }
-    ;;pub
 }
 
-task Shot (tp, pos:XY, vy) :T {
-    pico.output.sound("snds/shot.wav")
-    set pub = tag(tp, [[pos, SHOT-DIM]])
-    par-or {
-        await(:collided)
+func Shot (V, pos, vy) {
+    sdl.play "snds/shot.wav"
+    val rect = @{ x=pos.x+((V.x*SHOT_DIM.w)/2), y=(pos.y-(SHOT_DIM.h/2)), w=SHOT_DIM.w, h=SHOT_DIM.h }
+    set pub = @{
+        tag  = V.tag,
+        rect = rect,
+    }
+    par_or {
+        await :collided
     } with {
-        val sig = if tp==:T.Shot.L => 1 => -1
-        await spawn Move-T(pub.rect, [(WIN.w/3)*sig, vy])
+        await Move_T(rect, @{x=(W/3)*V.x, y=vy})
     } with {
-        every :Pico.Draw {
-            pico.set.color.draw(SHOT-COLOR)
-            pico.output.draw.rect(pub.rect)
+        every :sdl.draw {
+            REN::setDrawColor(SHOT_COLOR)
+            REN::fillRect(rect)
         }
     }
-    ;;pub
 }
 
-task Ship (tp, pos:XY, ctl:Control, shots, path) :T {
-    val dim:WH = pico.get.image.size(path)
-    val vel:XY = [0,0]
-    val dy = dim.h / SHIP-FRAMES
-    set pub = tag(tp, [[pos, [dim.w,dy]]])
+func Ship (V, shots) {
+    val sfc = IMG.load(V.img) --> assert
+    val tex = REN::createTextureFromSurface(sfc) --> assert
+    val w,h = sfc::getSize()
+    val vel = @{x=0,y=0}
+    val dy = h / SHIP_FRAMES
+    val rect = @{ x=V.pos.x-(w/2), y=V.pos.y-(dy/2), w=w, h=dy }
 
-    var acc:XY = [0,0]
+    set pub = @{
+        tag  = V.tag,
+        rect = rect,
+    }
+
+    var acc = @{x=0,y=0}
     var key
     spawn {
         par {
-            every :Pico.Key.Dn {
-                match it.key {
-                    == ctl.mov.left  => set acc.x = -WIN.w/SHIP-ACC-DIV
-                    == ctl.mov.right => set acc.x =  WIN.w/SHIP-ACC-DIV
-                    == ctl.mov.up    => set acc.y = -WIN.h/SHIP-ACC-DIV
-                    == ctl.mov.down  => set acc.y =  WIN.h/SHIP-ACC-DIV
-                    == ctl.shot      =>
-                        (spawn Shot(tp', copy(pos), vel.y) in shots) where {
-                            val tp' = ((tp == :T.Ship.L) and :T.Shot.L) or :T.Shot.R
-                        }
+            every SDL.event.KeyDown \{
+                match it.name {
+                    V.ctl.move.l => set acc.x = -W/SHIP_ACC_DIV
+                    V.ctl.move.r => set acc.x =  W/SHIP_ACC_DIV
+                    V.ctl.move.u => set acc.y = -H/SHIP_ACC_DIV
+                    V.ctl.move.d => set acc.y =  H/SHIP_ACC_DIV
+                    V.ctl.shot   => spawn [shots] Shot(V.shot, @{x=rect.x+(rect.w/2),y=rect.y+(rect.h/2)}, vel.y)
                 }
                 set key = it.key
             }
         } with {
             every :Pico.Key.Up {
                 set key = nil
-                set acc = [0,0]
+                set acc = @{x=0,y=0}
             }
         }
     }
 
-    par-or {
-        await(:collided)
-    } with {
-        every :Pico.Draw {
-            pico.set.image.crop([[0,frame*dy],[dim.w,dy]])
-                where {
-                    val frame = match key {
-                        == ctl.mov.left  => ((tp==:T.Ship.L) and 0) or 1
-                        == ctl.mov.right => ((tp==:T.Ship.R) and 0) or 1
-                        == ctl.mov.up    => 2
-                        == ctl.mov.down  => 3
-                        else => 0
-                    }
-                }
-            pico.output.draw.image(pos, path)
-        }
-    } with {
-        every :Pico.Frame {
-            val dt = it.ms / 1000
-            set vel.x = math.between(-SHIP-VEL-MAX.x, vel.x+(acc.x*dt), SHIP-VEL-MAX.x)
-            set vel.y = math.between(-SHIP-VEL-MAX.y, vel.y+(acc.y*dt), SHIP-VEL-MAX.y)
-            set pos.x = if tp == :T.Ship.L
-                => math.between(0, pos.x+(vel.x*dt), WIN.w/2)
-                => math.between(WIN.w/2, pos.x+(vel.x*dt), WIN.w)
-            set pos.y = math.between(0, pos.y+(vel.y*dt), WIN.h)
-        }
-    }
-
-    pico.output.sound("snds/explosion.wav")
-    watching <150:ms> {
-        var d = dy / 2;
+    watching :collided {
         par {
-            every :Pico.Frame {
-                set d = d + (((40*d)*it.ms)/1000)
+            every :sdl.draw {
+                val frame = match key {
+                    V.ctl.move.l => V.ctl.frame.l
+                    V.ctl.move.r => V.ctl.frame.r
+                    V.ctl.move.u => V.ctl.frame.u
+                    V.ctl.move.d => V.ctl.frame.d
+                    else => 0
+                }
+                val crop = @{ x=0, y=frame*dy, w=rect.w, h=dy }
+                REN::copy(tex, crop, rect)
             }
         } with {
-            every :Pico.Draw {
-                pico.set.color.draw([0xFF,0x00,0x00,0xFF])
-                pico.output.draw.oval([pos,[d,d]])
+            every :sdl.step \(_,ms) {
+                val dt = ms / 1000
+                set vel.x = between(-SHIP_VEL_MAX.x, vel.x+(acc.x*dt), SHIP_VEL_MAX.x)
+                set vel.y = between(-SHIP_VEL_MAX.y, vel.y+(acc.y*dt), SHIP_VEL_MAX.y)
+
+                val x = (rect.x + (vel.x*dt)) --> math.floor
+                val y = (rect.y + (vel.y*dt)) --> math.floor
+                set rect.x = between(V.lim.x1, x, V.lim.x2-w) --> math.floor
+                set rect.y = between(0, y, H-dy) --> math.floor
+            }
+        }
+    }
+
+    watching @.150 {
+        var d = dy / 2;
+        par {
+            every :sdl.step \(_,ms) {
+                set d = d + (((40*d)*ms)/1000)
+            }
+        } with {
+            every :sdl.draw {
+                REN::setDrawColor(0xFF0000)
+                REN::fillRect @{ x=rect.x, y=rect.y, w=d, h=d }
             }
         }
     }
