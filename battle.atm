@@ -68,7 +68,7 @@ func Battle () {
             loop {
                 val dt = math.random(1000, 5000)
                 await @.dt
-                spawn [metors] Meteor()
+                spawn [meteors] Meteor()
             }
         } with {
             every :sdl.step { ;; COLLISIONS
@@ -88,16 +88,16 @@ func Battle () {
 
                 val ts = #{}
                 loop _,t in ships {
-                    set ts[#ts+1] = t
+                    set ts[#ts] = t
                 }
                 loop _,t in shots_l {
-                    set ts[#ts+1] = t
+                    set ts[#ts] = t
                 }
                 loop _,t in shots_r {
-                    set ts[#ts+1] = t
+                    set ts[#ts] = t
                 }
                 loop _,t in meteors {
-                    set ts[#ts+1] = t
+                    set ts[#ts] = t
                 }
 
                 ;; check valid collisions within `ts` and emit 'collided'
@@ -105,13 +105,14 @@ func Battle () {
                 loop _,t1 in ts {
                     loop _,t2 in ts {
                         val no = (
-                            ((t1.tag==:R) && (t2.tag==:r)) ||
-                            ((t1.tag==:r) && (t2.tag==:R)) ||
-                            ((t1.tag==:L) && (t2.tag==:l)) ||
-                            ((t1.tag==:l) && (t2.tag==:L)) ||
-                            ((t1.tag==:M) && (t2.tag==:M))
+                            (t1 == t2) ||
+                            ((t1.pub.tag==:R) && (t2.pub.tag==:r)) ||
+                            ((t1.pub.tag==:r) && (t2.pub.tag==:R)) ||
+                            ((t1.pub.tag==:L) && (t2.pub.tag==:l)) ||
+                            ((t1.pub.tag==:l) && (t2.pub.tag==:L)) ||
+                            ((t1.pub.tag==:M) && (t2.pub.tag==:M))
                         )
-                        if (!no) && rect_vs_rect(t1.rect, t2.rect) {
+                        if (!no) && rect_vs_rect(t1.pub.rect, t2.pub.rect) {
                             emit [t1] :collided ;; will terminate t1
                             emit [t2] :collided ;; will terminate t2
                         }
@@ -128,7 +129,7 @@ func Battle () {
     ;;  - 1, if ship[0] is dead
     ;;  - 0, if ship[1] is dead
     ;;;
-    match s.tag {       ;; BATTLE RESULT
+    match s.pub.tag {       ;; BATTLE RESULT
         :L => :R
         :R => :L
     }

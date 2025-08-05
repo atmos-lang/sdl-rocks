@@ -1,7 +1,7 @@
 val SHIP_FRAMES     = 4
 val SHIP_ACC_DIV    = 10
 val SHIP_VEL_MAX    = @{ x=W/2.5, y=H/2.5 }
-val SHOT_DIM        = @{ x=W/50-->math.floor, h=H/100-->math.floor }
+val SHOT_DIM        = @{ w=W/50-->math.floor, h=H/100-->math.floor }
 val SHOT_COLOR      = 0xFFFF88
 val METEOR_FRAMES   = 6
 val METEOR_AWAIT    = 5000
@@ -70,7 +70,7 @@ func Meteor () {
     }
 
     par_or {
-        val dt = random.int(1, METEOR_AWAIT)
+        val dt = math.random(1, METEOR_AWAIT)
         await @.dt
         par_or {
             await Move_T(rect, @{x=vx,y=vy})
@@ -88,7 +88,7 @@ func Meteor () {
         var x = 0
         every :sdl.step \(_,ms) {
             set x = x + ((v * ms) / 1000)
-            set dx = (x % dim.w) - (x % rect.dim.w)
+            set dx = (x % ww) - (x % w)
         }
     }
 }
@@ -131,16 +131,16 @@ func Ship (V, shots) {
         par {
             every SDL.event.KeyDown \{
                 match it.name {
+                    V.ctl.shot   => spawn [shots] Shot(V.shot, @{x=rect.x+(rect.w/2),y=rect.y+(rect.h/2)}, vel.y)
                     V.ctl.move.l => set acc.x = -W/SHIP_ACC_DIV
                     V.ctl.move.r => set acc.x =  W/SHIP_ACC_DIV
                     V.ctl.move.u => set acc.y = -H/SHIP_ACC_DIV
                     V.ctl.move.d => set acc.y =  H/SHIP_ACC_DIV
-                    V.ctl.shot   => spawn [shots] Shot(V.shot, @{x=rect.x+(rect.w/2),y=rect.y+(rect.h/2)}, vel.y)
                 }
-                set key = it.key
+                set key = it.name
             }
         } with {
-            every :Pico.Key.Up {
+            every SDL.event.KeyUp {
                 set key = nil
                 set acc = @{x=0,y=0}
             }
