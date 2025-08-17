@@ -41,9 +41,6 @@ val Battle = require "battle" ;; actual battle gameplay
 
 spawn {    ;; BACKGROUND
     ;;;
-    ;; Spawns a task to draw the background image on every frame.
-    ;; We draw at position (0,0), which is the center of the screen.
-    ;; By default, the center of the image is anchored at the given position.
     ;; This task is the first to spawn, which makes the background image to
     ;; always be rendered first.
     ;;;
@@ -76,15 +73,15 @@ spawn {    ;; POINTS
 ;; MAIN-LOOP
 ;;;
 ;; Starts the main game loop:
-;;  - Shows the "tap to start" message.
+;;  - Shows the "press to start" message.
 ;;  - Runs the next battle with the actual gameplay.
 ;;  - Restarts whenever one of the ships is destroyed.
 ;;;
 loop {
     ;; ENTER-TO-START
-    watching SDL.event.KeyDown, 'Return', {
+    watching SDL.event.KeyDown, :Return {
         ;;;
-        ;; Spawns the blinking message, and awaits any key press.
+        ;; Spawns the blinking message, and awaits a :Return press.
         ;;;
         loop {
             ;; 500ms on
@@ -142,8 +139,7 @@ loop {
     ;; Restarts the main loop.
     ;; Due to lexical memory management, only the points are preserved
     ;; between loop iterations.
-    ;; All other data, including those dynamically allocated, are
-    ;; guaranteed to be reclaimed after this point, no matter how the
-    ;; nested code above is structured.
+    ;; All other tasks are guaranteed to abort and be reclaimed after this
+    ;; point.
     ;;;
 }

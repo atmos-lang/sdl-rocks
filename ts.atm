@@ -23,11 +23,6 @@ func random_signal () {
 ;;  * terminates when rect leaves the screen
 
 func Move_T (rect, vel) {
-    ;;;
-    ;; Updates the given `rect` position according to its `vel` speed.
-    ;;  - Updates on every :Frame.
-    ;;  - Terminates when leaving the screen.
-    ;;;
     watching out_of_screen {
         every :sdl.step \(_,ms) {
             val dt = ms / 1000

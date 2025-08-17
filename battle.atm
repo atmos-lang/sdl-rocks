@@ -31,13 +31,11 @@ val V = @{
 
 ;;;
 ;; Declares and spawns the game objects:
-;;  - Meteors live in a dynamic pool of tasks and are spawned periodically.
-;;  - Ships are fixed and held in a tuple pair.
-;;  - Shots live in dynamic pools, one for each ship, which are held in a
-;;    tuple pair.
+;;  - Meteors live in an unbounded pool of tasks and are spawned periodically.
+;;  - Ships live in a 2-size pool.
+;;  - Shots also live in pools, but one for each ship with only 3 slots.
 ;; Pools control the lifecycle of tasks by releasing them from memory
-;; automatically on termination. Tasks in pools are anonymous and can only
-;; be accessed through iterators or reference tracks.
+;; automatically on termination.
 ;;;
 
 func Battle () {
@@ -53,6 +51,8 @@ func Battle () {
     spawn [ships] Ship(V.l, shots_l)
     spawn [ships] Ship(V.r, shots_r)
 
+    ;; `s` becomes a reference to a collided ship within ships
+
     val s = watching ships {     ;; GAMEPLAY
         ;;;
         ;; Runs the gameplay until one of the two ships is destroyed:
@@ -60,11 +60,7 @@ func Battle () {
         ;;  - Checks collisions between all objects.
         ;;;
         par {                   ;; METEORS
-            ;;;
             ;; Spawns new meteros in the game every period:
-            ;;  - Hold them in the outer pool.
-            ;;  - Gradually decreases the spawning period.
-            ;;;
             loop {
                 val dt = math.random(1000, 5000)
                 await @.dt
@@ -74,18 +70,15 @@ func Battle () {
             every :sdl.step { ;; COLLISIONS
                 ;;;
                 ;; Checks collisions between objects:
-                ;;  1. Uses `to.vector` to collect all references to dinamically
-                ;;     allocated ships, shots, and meteors.
-                ;;  2. Uses `pico-collisions` to get all pairs of colliding
-                ;;     objects, using the `f-cmp` comparator which relies on `:T`
-                ;;     rect.
-                ;;  3. Iterates over the pairs, ignores innocuous collisions, and
-                ;;     collects final colliding objects.
-                ;;  4. Signals colliding objects.
+                ;;  1. Collects all references to ships, shots, and meteors.
+                ;;  2. Checks all pairs of colliding objects:
+                ;;      - ignores innocuous collisions
+                ;;  3. Signals colliding objects.
                 ;; A ship collision will eventually terminate the enclosing
                 ;; `watching`, also terminating the current battle.
                 ;;;
 
+                ;; TODO: use ++ (needs a fix)
                 val ts = #{}
                 loop _,t in ships {
                     set ts[#ts] = t
@@ -122,17 +115,17 @@ func Battle () {
         }
     }
 
-    sdl.play "snds/explosion.wav"   ;; overrides any active sound
+    sdl.play "snds/explosion.wav"
 
     ;;;
     ;; Returns the winner index to the main game loop:
-    ;;  - 1, if ship[0] is dead
-    ;;  - 0, if ship[1] is dead
+    ;;  - :R, if ship==:L is dead
+    ;;  - :L, if ship==:R is dead
     ;;;
-    match s.pub.tag {       ;; BATTLE RESULT
+    match s.pub.tag {
         :L => :R
         :R => :L
     }
 }
 
-Battle
+Battle  ;; result of 'require "battle"'
