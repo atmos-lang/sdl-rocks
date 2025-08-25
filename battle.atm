@@ -78,20 +78,7 @@ func Battle () {
                 ;; `watching`, also terminating the current battle.
                 ;;;
 
-                ;; TODO: use ++ (needs a fix)
-                val ts = #{}
-                loop _,t in ships {
-                    set ts[#ts] = t
-                }
-                loop _,t in shots_l {
-                    set ts[#ts] = t
-                }
-                loop _,t in shots_r {
-                    set ts[#ts] = t
-                }
-                loop _,t in meteors {
-                    set ts[#ts] = t
-                }
+                val ts = #{} <++ ships <++ shots_l <++ shots_r <++ meteors
 
                 ;; check valid collisions within `ts` and emit 'collided'
                 ;; (ignore ship 'R'/'r' shot, ship 'L'/'l' shot, 'M'/'M' meteors)
