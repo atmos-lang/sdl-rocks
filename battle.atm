@@ -78,7 +78,7 @@ func Battle () {
                 ;; `watching`, also terminating the current battle.
                 ;;;
 
-                val ts = #{} ++ ships ++ shots_l ++ shots_r ++ meteors
+                val ts = @{} ++ ships ++ shots_l ++ shots_r ++ meteors
 
                 ;; check valid collisions within `ts` and emit 'collided'
                 ;; (ignore ship 'R'/'r' shot, ship 'L'/'l' shot, 'M'/'M' meteors)
