@@ -23,13 +23,8 @@ func random_signal () {
 ;;  * terminates when rect leaves the screen
 
 func Move_T (rect, vel) {
-    ;;;
-    ;; Updates the given `rect` position according to its `vel` speed.
-    ;;  - Updates on every :Frame.
-    ;;  - Terminates when leaving the screen.
-    ;;;
     watching out_of_screen {
-        every :clock \(_,ms) {
+        every _,ms in :clock {
             val dt = ms / 1000
             set rect.x = rect.x + (vel.x * dt) --> math.floor
             set rect.y = rect.y + (vel.y * dt) --> math.floor
@@ -86,7 +81,7 @@ func Meteor () {
     } with {
         val v = ((vx->math.pow(2)) + (vy->math.pow(2))) --> math.pow(1/2)
         var x = 0
-        every :clock \(_,ms) {
+        every _,ms in :clock {
             set x = x + ((v * ms) / 1000)
             set dx = (x % ww) - (x % w)
         }
@@ -129,7 +124,7 @@ func Ship (V, shots) {
     var key
     spawn {
         par {
-            every SDL.event.KeyDown \{
+            every it in SDL.event.KeyDown {
                 match it.name {
                     V.ctl.shot   => spawn [shots] Shot(V.shot, @{x=rect.x+(rect.w/2),y=rect.y+(rect.h/2)}, vel.y)
                     V.ctl.move.l => set acc.x = -W/SHIP_ACC_DIV
@@ -161,7 +156,7 @@ func Ship (V, shots) {
                 REN::copy(tex, crop, rect)
             }
         } with {
-            every :clock \(_,ms) {
+            every _,ms in :clock {
                 val dt = ms / 1000
                 set vel.x = between(-SHIP_VEL_MAX.x, vel.x+(acc.x*dt), SHIP_VEL_MAX.x)
                 set vel.y = between(-SHIP_VEL_MAX.y, vel.y+(acc.y*dt), SHIP_VEL_MAX.y)
@@ -177,7 +172,7 @@ func Ship (V, shots) {
     watching @.150 {
         var d = dy / 2;
         par {
-            every :clock \(_,ms) {
+            every _,ms in :clock {
                 set d = d + (((40*d)*ms)/1000)
             }
         } with {
