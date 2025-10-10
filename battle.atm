@@ -71,7 +71,7 @@ func Battle () {
                 spawn [meteors] Meteor()
             }
         } with {
-            every :sdl.step { ;; COLLISIONS
+            every :clock { ;; COLLISIONS
                 ;;;
                 ;; Checks collisions between objects:
                 ;;  1. Uses `to.vector` to collect all references to dinamically
