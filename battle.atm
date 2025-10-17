@@ -67,7 +67,7 @@ func Battle () {
                 spawn [meteors] Meteor()
             }
         } with {
-            every :sdl.step { ;; COLLISIONS
+            every :clock { ;; COLLISIONS
                 ;;;
                 ;; Checks collisions between objects:
                 ;;  1. Collects all references to ships, shots, and meteors.
