@@ -26,8 +26,8 @@ func Move_T (rect, vel) {
     watching out_of_screen {
         every _,ms in :clock {
             val dt = ms / 1000
-            set rect.x = rect.x + (vel.x * dt) --> math.floor
-            set rect.y = rect.y + (vel.y * dt) --> math.floor
+            set rect.x = rect.x + (vel.x * dt)
+            set rect.y = rect.y + (vel.y * dt)
         }
     } where {
         out_of_screen = func () {
@@ -98,10 +98,12 @@ func Shot (V, pos, vy) {
     par_or {
         await :collided
     } with {
-        await Move_T(rect, @{x=(W/3)*V.x, y=vy})
+        await Move_T(rect, @{x=(W/6)*V.x, y=vy})
     } with {
         every :sdl.draw {
             REN::setDrawColor(SHOT_COLOR)
+            set rect.x = math.floor(rect.x)
+            set rect.y = math.floor(rect.y)
             REN::fillRect(rect)
         }
     }
@@ -161,10 +163,10 @@ func Ship (V, shots) {
                 set vel.x = between(-SHIP_VEL_MAX.x, vel.x+(acc.x*dt), SHIP_VEL_MAX.x)
                 set vel.y = between(-SHIP_VEL_MAX.y, vel.y+(acc.y*dt), SHIP_VEL_MAX.y)
 
-                val x = (rect.x + (vel.x*dt)) --> math.floor
-                val y = (rect.y + (vel.y*dt)) --> math.floor
-                set rect.x = between(V.lim.x1, x, V.lim.x2-w) --> math.floor
-                set rect.y = between(0, y, H-dy) --> math.floor
+                val x = rect.x + (vel.x*dt)
+                val y = rect.y + (vel.y*dt)
+                set rect.x = between(V.lim.x1, x, V.lim.x2-w)
+                set rect.y = between(0, y, H-dy)
             }
         }
     }
