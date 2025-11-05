@@ -10,15 +10,13 @@ set PP = sdl.pct_to_pos
 set rect_vs_rect = sdl.rect_vs_rect
 
 set W, H = (640, 480)
-set WIN = SDL.createWindow @{
+val _,ren = sdl.window @{
 	title  = "The Battle of Ships",
 	width  = W,
 	height = H,
     flags  = @{ SDL.flags.OpenGL },
-} --> assert
-
-set REN = SDL.createRenderer(WIN,-1) --> assert
-set sdl.ren = REN
+}
+set REN = ren
 
 set FNT = TTF.open("tiny.ttf", H/15) --> assert
 
@@ -105,15 +103,15 @@ loop {
                 val tex = REN::createTextureFromSurface(sfc) --> assert
                 val pt = PP(50, 50)
                 val r = @{
-                    x = (pt.x - (w/2)) --> math.floor,
-                    y = (pt.y - (h/2)) --> math.floor,
+                    x = (pt.x - (w/2)),
+                    y = (pt.y - (h/2)),
                     w = w,
                     h = h,
                 } where {
                     w,h = sfc::getSize()
                 }
                 every :sdl.draw {
-                    REN::copy(tex, nil, r)
+                    REN::copy(tex, nil, sdl.ints(r))
                 }
             }
             await(SDL.event.KeyDown, 'P')

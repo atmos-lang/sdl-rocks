@@ -1,7 +1,7 @@
 val SHIP_FRAMES     = 4
 val SHIP_ACC_DIV    = 10
 val SHIP_VEL_MAX    = @{ x=W/2.5, y=H/2.5 }
-val SHOT_DIM        = @{ w=W/50-->math.floor, h=H/100-->math.floor }
+val SHOT_DIM        = @{ w=W/50, h=H/100 }
 val SHOT_COLOR      = 0xFFFF88
 val METEOR_FRAMES   = 6
 val METEOR_AWAIT    = 5000
@@ -76,7 +76,7 @@ func Meteor () {
     } with {
         every :sdl.draw {
             val crop = @{ x=dx, y=0, w=w, h=h }
-            REN::copy(tex, crop, rect)
+            REN::copy(tex, crop, sdl.ints(rect))
         }
     } with {
         val v = ((vx->math.pow(2)) + (vy->math.pow(2))) --> math.pow(1/2)
@@ -98,13 +98,11 @@ func Shot (V, pos, vy) {
     par_or {
         await :collided
     } with {
-        await Move_T(rect, @{x=(W/6)*V.x, y=vy})
+        await Move_T(rect, @{x=(W/3)*V.x, y=vy})
     } with {
         every :sdl.draw {
             REN::setDrawColor(SHOT_COLOR)
-            set rect.x = math.floor(rect.x)
-            set rect.y = math.floor(rect.y)
-            REN::fillRect(rect)
+            REN::fillRect(sdl.ints(rect))
         }
     }
 }
@@ -155,7 +153,7 @@ func Ship (V, shots) {
                     else => 0
                 }
                 val crop = @{ x=0, y=frame*dy, w=rect.w, h=dy }
-                REN::copy(tex, crop, rect)
+                REN::copy(tex, crop, sdl.ints(rect))
             }
         } with {
             every _,ms in :clock {
@@ -171,16 +169,16 @@ func Ship (V, shots) {
         }
     }
 
-    watching @.150 {
+    watching @.100 {
         var d = dy / 2;
         par {
             every _,ms in :clock {
-                set d = d + (((40*d)*ms)/1000)
+                set d = d + (((10*d)*ms)/1000)
             }
         } with {
             every :sdl.draw {
                 REN::setDrawColor(0xFF0000)
-                REN::fillRect @{ x=rect.x, y=rect.y, w=d, h=d }
+                REN::fillRect(sdl.ints @{ x=rect.x, y=rect.y, w=d, h=d })
             }
         }
     }
