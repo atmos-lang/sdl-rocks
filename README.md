@@ -2,10 +2,18 @@
 
 A spaceship shooter game for 2 simultaneous players.
 
+# Install
+
+```
+sudo luarocks --lua-version=5.4 install atmos-lang 0.7
+sudo luarocks --lua-version=5.4 install atmos-env-sdl 0.2
+```
+
 # Run
 
 ```
-atmos main.lua
+git checkout v0.4
+atmos main.atm
 ```
 
 # Instructions
