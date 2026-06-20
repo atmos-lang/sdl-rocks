@@ -10,12 +10,12 @@ set PP = sdl.pct_to_pos
 set rect_vs_rect = sdl.rect_vs_rect
 
 set W, H = (640, 480)
-val _,ren = sdl.window @{
+val _,ren = sdl.window [
 	title  = "The Battle of Ships",
 	width  = W,
 	height = H,
-    flags  = @{ SDL.flags.OpenGL },
-}
+    flags  = [ SDL.flags.OpenGL ],
+]
 set REN = ren
 
 set FNT = TTF.open("tiny.ttf", H/15) --> assert
@@ -33,12 +33,12 @@ spawn {    ;; BACKGROUND
     ;;;
     val sfc = IMG.load("imgs/bg.png") --> assert
     val tex = REN::createTextureFromSurface(sfc) --> assert
-    every :sdl.draw {
+    loop on :sdl.draw {
         REN::copy(tex)
     }
 }
 
-val points = @{ L=0, R=0 }
+val points = [ L=0, R=0 ]
 
 spawn {    ;; POINTS
     ;;;
@@ -50,7 +50,7 @@ spawn {    ;; POINTS
     ;;;
     val l = PP(10, 90)
     val r = PP(90, 90)
-    every :sdl.draw {
+    loop on :sdl.draw {
         REN::setDrawColor(0xFFFFFF)
         sdl.write(FNT, tostring(points.L), l)
         sdl.write(FNT, tostring(points.R), r)
@@ -66,21 +66,21 @@ spawn {    ;; POINTS
 ;;;
 loop {
     ;; ENTER-TO-START
-    watching SDL.event.KeyDown, :Return {
+    watching :sdl [type=SDL.event.KeyDown, name='Return'] {
         ;;;
         ;; Spawns the blinking message, and awaits a :Return press.
         ;;;
         loop {
             ;; 500ms on
-            watching @.500 {
+            watching 500ms {
                 val pt = PP(50, 50)
-                every :sdl.draw {
+                loop on :sdl.draw {
                     REN::setDrawColor(0xFFFFFF)
                     sdl.write(FNT, "= PRESS ENTER TO START =", pt)
                 }
             }
             ;; 500ms off
-            await @.500
+            await 500ms
         }
     }
 
@@ -96,25 +96,25 @@ loop {
     ;;  * awaits 'P' to toggle battle on
     spawn {
         loop {
-            await(SDL.event.KeyDown, 'P')
+            await(:sdl [type=SDL.event.KeyDown, name='P'])
             toggle battle(false)
             spawn {
                 val sfc = IMG.load("imgs/pause.png") --> assert
                 val tex = REN::createTextureFromSurface(sfc) --> assert
                 val pt = PP(50, 50)
-                val r = @{
+                val r = [
                     x = (pt.x - (w/2)),
                     y = (pt.y - (h/2)),
                     w = w,
                     h = h,
-                } where {
+                ] where {
                     w,h = sfc::getSize()
                 }
-                every :sdl.draw {
+                loop on :sdl.draw {
                     REN::copy(tex, nil, sdl.ints(r))
                 }
             }
-            await(SDL.event.KeyDown, 'P')
+            await(:sdl [type=SDL.event.KeyDown, name='P'])
             toggle battle(true)
         }
     }
@@ -124,8 +124,8 @@ loop {
     ;;  * increments winner points
     ;;  * awaits 1s before next battle
     val winner = await(battle)
-    set points[winner] = points[winner] + 1
-    await @1
+    set points@winner = points@winner + 1
+    await 1s
 
     ;;;
     ;; Restarts the main loop.
